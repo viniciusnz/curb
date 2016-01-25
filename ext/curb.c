@@ -219,6 +219,22 @@ static VALUE ruby_curl_conv_q(VALUE mod) {
 #endif
 }
 
+/*
+ * call-seq:
+ *   Curl.http2?                                       => true or false
+ *
+ * Returns true if the installed libcurl was built with support for HTTP2.
+ * For libcurl versions < 7.33.0, always returns false.
+ */
+static VALUE ruby_curl_http2_q(VALUE mod) {
+#ifdef HAVE_CURL_VERSION_HTTP2
+  curl_version_info_data *ver = curl_version_info(CURLVERSION_NOW);
+  return((ver->features & CURL_VERSION_HTTP2) ? Qtrue : Qfalse);
+#else
+  return Qfalse;
+#endif
+}
+
 void Init_curb_core() {
   // TODO we need to call curl_global_cleanup at exit!
   curl_version_info_data *ver;
@@ -280,6 +296,9 @@ void Init_curb_core() {
   rb_define_const(mCurl, "CURL_SSLVERSION_TLSv1",   INT2FIX(CURL_SSLVERSION_TLSv1));
   rb_define_const(mCurl, "CURL_SSLVERSION_SSLv2",   INT2FIX(CURL_SSLVERSION_SSLv2));
   rb_define_const(mCurl, "CURL_SSLVERSION_SSLv3",   INT2FIX(CURL_SSLVERSION_SSLv3));
+  rb_define_const(mCurl, "CURL_SSLVERSION_TLSv1_0",   INT2FIX(CURL_SSLVERSION_TLSv1_0));
+  rb_define_const(mCurl, "CURL_SSLVERSION_TLSv1_1",   INT2FIX(CURL_SSLVERSION_TLSv1_1));
+  rb_define_const(mCurl, "CURL_SSLVERSION_TLSv1_2",   INT2FIX(CURL_SSLVERSION_TLSv1_2));
 
   rb_define_const(mCurl, "CURL_USESSL_CONTROL", INT2FIX(CURB_FTPSSL_CONTROL));
   rb_define_const(mCurl, "CURL_USESSL_NONE", INT2FIX(CURB_FTPSSL_NONE));
@@ -290,6 +309,9 @@ void Init_curb_core() {
   rb_define_const(mCurl, "CURL_SSLVERSION_TLSv1",   INT2FIX(-1));
   rb_define_const(mCurl, "CURL_SSLVERSION_SSLv2",   INT2FIX(-1));
   rb_define_const(mCurl, "CURL_SSLVERSION_SSLv3",   INT2FIX(-1));
+  rb_define_const(mCurl, "CURL_SSLVERSION_TLSv1_0", INT2FIX(-1));
+  rb_define_const(mCurl, "CURL_SSLVERSION_TLSv1_1", INT2FIX(-1));
+  rb_define_const(mCurl, "CURL_SSLVERSION_TLSv1_2", INT2FIX(-1));
 
   rb_define_const(mCurl, "CURL_USESSL_CONTROL", INT2FIX(-1));
   rb_define_const(mCurl, "CURL_USESSL_NONE", INT2FIX(-1));
@@ -870,6 +892,15 @@ void Init_curb_core() {
 #if HAVE_CURL_SSLVERSION_SSLv3
   CURB_DEFINE(CURL_SSLVERSION_SSLv3);
 #endif
+#if HAVE_CURL_SSLVERSION_TLSv1_0
+  CURB_DEFINE(CURL_SSLVERSION_TLSv1_0);
+#endif
+#if HAVE_CURL_SSLVERSION_TLSv1_1
+  CURB_DEFINE(CURL_SSLVERSION_TLSv1_1);
+#endif
+#if HAVE_CURL_SSLVERSION_TLSv1_2
+  CURB_DEFINE(CURL_SSLVERSION_TLSv1_2);
+#endif
 #if HAVE_CURLOPT_SSL_VERIFYPEER
   CURB_DEFINE(CURLOPT_SSL_VERIFYPEER);
 #endif
@@ -970,7 +1001,13 @@ void Init_curb_core() {
   CURB_DEFINE(CURLGSSAPI_DELEGATION_POLICY_FLAG);
 #endif
 
+#if HAVE_CURLOPT_UNIX_SOCKET_PATH
+  CURB_DEFINE(CURLOPT_UNIX_SOCKET_PATH);
+#endif
 
+#if LIBCURL_VERSION_NUM >= 0x072100 /* 7.33.0 */
+  rb_define_const(mCurl, "HTTP_2_0", LONG2NUM(CURL_HTTP_VERSION_2_0));
+#endif
   rb_define_const(mCurl, "HTTP_1_1", LONG2NUM(CURL_HTTP_VERSION_1_1));
   rb_define_const(mCurl, "HTTP_1_0", LONG2NUM(CURL_HTTP_VERSION_1_0));
   rb_define_const(mCurl, "HTTP_NONE", LONG2NUM(CURL_HTTP_VERSION_NONE));
@@ -988,6 +1025,7 @@ void Init_curb_core() {
   rb_define_singleton_method(mCurl, "idn?", ruby_curl_idn_q, 0);
   rb_define_singleton_method(mCurl, "sspi?", ruby_curl_sspi_q, 0);
   rb_define_singleton_method(mCurl, "conv?", ruby_curl_conv_q, 0);
+  rb_define_singleton_method(mCurl, "http2?", ruby_curl_http2_q, 0);
 
   init_curb_errors();
   init_curb_easy();

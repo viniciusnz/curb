@@ -67,12 +67,14 @@ rb_hash_clear_i(VALUE key, VALUE value, VALUE dummy) {
 }
 
 static void curl_multi_free(ruby_curl_multi *rbcm) {
+  VALUE hash = rbcm->requests;
 
-  if (rbcm && !rbcm->requests == Qnil && rb_type(rbcm->requests) == T_HASH && RHASH_SIZE(rbcm->requests) > 0) {
+  if (rbcm && !NIL_P(hash) && rb_type(hash) == T_HASH && RHASH_SIZE(hash) > 0) {
 
-    rb_hash_foreach( rbcm->requests, (int (*)())curl_multi_flush_easy, (VALUE)rbcm );
+    rb_hash_foreach(hash, (int (*)())curl_multi_flush_easy, (VALUE)rbcm);
+    rb_hash_foreach(hash, rb_hash_clear_i, 0);
+    /* rb_hash_clear(rbcm->requests); */
 
-    rb_hash_foreach(rbcm->requests, rb_hash_clear_i, 0); //rb_hash_clear(rbcm->requests);
     rbcm->requests = Qnil;
   }
   curl_multi_cleanup(rbcm->handle);
@@ -225,11 +227,18 @@ static VALUE ruby_curl_multi_pipeline(VALUE self, VALUE onoff) {
  */
 VALUE ruby_curl_multi_add(VALUE self, VALUE easy) {
   CURLMcode mcode;
+  VALUE r;
   ruby_curl_easy *rbce;
   ruby_curl_multi *rbcm;
 
   Data_Get_Struct(self, ruby_curl_multi, rbcm);
   Data_Get_Struct(easy, ruby_curl_easy, rbce);
+
+  // check if this curl handle has been added before adding again
+  r = rb_hash_aref(rbcm->requests, INT2NUM((int)rbce->curl));
+  if ( r != Qnil ) {
+    return Qnil;
+  }
 
   /* setup the easy handle */
   ruby_curl_easy_setup( rbce );
@@ -245,7 +254,7 @@ VALUE ruby_curl_multi_add(VALUE self, VALUE easy) {
    * If this number is not correct, the next call to curl_multi_perform will correct it. */
   rbcm->running++;
 
-  rb_hash_aset( rbcm->requests, easy, easy );
+  rb_hash_aset( rbcm->requests, INT2NUM((int)rbce->curl), easy );
 
   return self;
 }
@@ -280,6 +289,12 @@ static void rb_curl_multi_remove(ruby_curl_multi *rbcm, VALUE easy) {
 
   Data_Get_Struct(easy, ruby_curl_easy, rbce);
 
+  // check if this curl handle has been added before removing
+  r = rb_hash_aref(rbcm->requests, INT2NUM((int)rbce->curl));
+  if ( r == Qnil ) {
+    return;
+  }
+
   result = curl_multi_remove_handle(rbcm->handle, rbce->curl);
   if (result != 0) {
     raise_curl_multi_error_exception(result);
@@ -290,7 +305,7 @@ static void rb_curl_multi_remove(ruby_curl_multi *rbcm, VALUE easy) {
   ruby_curl_easy_cleanup( easy, rbce );
 
   // active should equal INT2FIX(RHASH(rbcm->requests)->tbl->num_entries)
-  r = rb_hash_delete( rbcm->requests, easy );
+  r = rb_hash_delete( rbcm->requests, INT2NUM((int)rbce->curl) );
   if( r != easy || r == Qnil ) {
     rb_warn("Possibly lost track of Curl::Easy VALUE, it may not be reclaimed by GC");
   }
@@ -406,8 +421,6 @@ static void rb_curl_mutli_handle_complete(VALUE self, CURL *easy_handle, int res
 
   if (val == Qfalse) {
     rb_warn("uncaught exception from callback");
-      // exception was raised?
-    //fprintf(stderr, "exception raised from callback\n");
   }
 
 }
@@ -581,6 +594,8 @@ VALUE ruby_curl_multi_perform(int argc, VALUE *argv, VALUE self) {
       rc = (int)(VALUE) rb_thread_call_without_gvl((void *(*)(void *))curb_select, &fdset_args, RUBY_UBF_IO, 0);
 #elif HAVE_RB_THREAD_BLOCKING_REGION
       rc = rb_thread_blocking_region(curb_select, &fdset_args, RUBY_UBF_IO, 0);
+#elif HAVE_RB_THREAD_FD_SELECT
+      rc = rb_thread_fd_select(maxfd+1, &fdread, &fdwrite, &fdexcep, &tv);
 #else
       rc = rb_thread_select(maxfd+1, &fdread, &fdwrite, &fdexcep, &tv);
 #endif

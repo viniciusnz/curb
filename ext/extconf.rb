@@ -78,6 +78,7 @@ have_constant "curl_version_largefile"
 have_constant "curl_version_idn"
 have_constant "curl_version_sspi"
 have_constant "curl_version_conv"
+have_constant "curl_version_http2"
 have_constant "curlproxy_http"
 have_constant "curlproxy_socks4"
 have_constant "curlproxy_socks4a"
@@ -320,6 +321,9 @@ have_constant "curl_sslversion_default"
 have_constant :CURL_SSLVERSION_TLSv1
 have_constant :CURL_SSLVERSION_SSLv2
 have_constant :CURL_SSLVERSION_SSLv3
+have_constant :CURL_SSLVERSION_TLSv1_0
+have_constant :CURL_SSLVERSION_TLSv1_1
+have_constant :CURL_SSLVERSION_TLSv1_2
 have_constant "curlopt_ssl_verifypeer"
 have_constant "curlopt_cainfo"
 have_constant "curlopt_issuercert"
@@ -359,6 +363,9 @@ have_constant "curlgssapi_delegation_policy_flag"
 have_constant "curlgssapi_delegation_flag"
 
 have_constant "CURLM_ADDED_ALREADY"
+
+# added in 7.40.0
+have_constant "curlopt_unix_socket_path"
 
 if try_compile('int main() { return 0; }','-Wall')
   $CFLAGS << ' -Wall'

@@ -1,7 +1,6 @@
 # Curb - Libcurl bindings for Ruby
 
-* [rubyforge rdoc](http://curb.rubyforge.org/)
-* [rubyforge project](http://rubyforge.org/projects/curb)
+* [rubydoc rdoc](http://www.rubydoc.info/github/taf2/curb/)
 * [github project](http://github.com/taf2/curb/tree/master)
 
 Curb (probably CUrl-RuBy or something) provides Ruby-language bindings for the
@@ -26,7 +25,13 @@ Ruby license. See the LICENSE file for the gory details.
 ... will usually be as simple as:
 
     $ gem install curb
-  
+
+On Windows, make sure you're using the [DevKit](http://rubyinstaller.org/downloads/) and
+the [development version of libcurl](http://curl.haxx.se/gknw.net/7.39.0/dist-w32/curl-7.39.0-devel-mingw32.zip). Unzip, then run this in your command
+line (alter paths to your curl location, but remember to use forward slashes):
+
+    gem install curb --platform=ruby -- --with-curl-lib=C:/curl-7.39.0-devel-mingw32/bin --with-curl-include=C:/curl-7.39.0-devel-mingw32/include
+
 Or, if you downloaded the archive:  
 
     $ rake install 
@@ -44,6 +49,10 @@ On Ubuntu, the dependencies can be satisfied by installing the following package
 
     $ sudo apt-get install libcurl3 libcurl3-gnutls libcurl4-openssl-dev
 
+On RedHat:
+
+    $ sudo yum install ruby-devel libcurl-devel openssl-devel
+    
 Curb has fairly extensive RDoc comments in the source. You can build the
 documentation with:
 

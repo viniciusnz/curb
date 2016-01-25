@@ -3,7 +3,7 @@ module Curl
   class Multi
     class << self
       # call-seq:
-      #   Curl::Multi.get('url1','url2','url3','url4','url5', :follow_location => true) do|easy|
+      #   Curl::Multi.get(['url1','url2','url3','url4','url5'], :follow_location => true) do|easy|
       #     easy
       #   end
       # 
@@ -92,7 +92,7 @@ module Curl
 
         # configure the multi handle
         multi_options.each { |k,v| m.send("#{k}=", v) }
-        callbacks = [:on_progress,:on_debug,:on_failure,:on_success,:on_body,:on_header]
+        callbacks = [:on_progress,:on_debug,:on_failure,:on_success,:on_redirect,:on_body,:on_header]
 
         add_free_handle = proc do|conf, easy|
           c       = conf.dup # avoid being destructive to input
@@ -135,9 +135,9 @@ module Curl
           #
           c.each { |k,v| easy.send("#{k}=",v) }
 
-          easy.on_complete {|curl,code|
+          easy.on_complete {|curl|
             free_handles << curl
-            blk.call(curl,code,method) if blk
+            blk.call(curl,curl.response_code,method) if blk
           }
           m.add(easy)
         end

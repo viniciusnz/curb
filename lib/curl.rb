@@ -48,7 +48,7 @@ module Curl
 
   def self.urlalize(url, params={})
     query_str = params.map {|k,v| "#{URI.escape(k.to_s)}=#{CGI.escape(v.to_s)}" }.join('&')
-    if url.match(/\?/)
+    if url.match(/\?/) && query_str.size > 0
       "#{url}&#{query_str}"
     elsif query_str.size > 0
       "#{url}?#{query_str}"
@@ -59,6 +59,10 @@ module Curl
 
   def self.postalize(params={})
     params.respond_to?(:map) ? URI.encode_www_form(params) : (params.respond_to?(:to_s) ? params.to_s : params)
+  end
+
+  def self.reset
+    Thread.current[:curb_curl] = Curl::Easy.new
   end
 
 end

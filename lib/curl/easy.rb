@@ -6,7 +6,7 @@ module Curl
     alias body body_str
     alias head header_str
 
-    class Error < Exception
+    class Error < StandardError
       attr_accessor :message, :code
       def initialize(code, msg)
         self.message = msg
@@ -66,6 +66,7 @@ module Curl
       self.multi = Curl::Multi.new if self.multi.nil?
       self.multi.add self
       ret = self.multi.perform
+      self.multi.remove self
 
       if self.last_result != 0 && self.on_failure.nil?
         error = Curl::Easy.error(self.last_result)
@@ -100,6 +101,7 @@ module Curl
     # call-seq:
     #
     #  easy = Curl::Easy.new("url")
+    #  easy.version = Curl::HTTP_2_0
     #  easy.version = Curl::HTTP_1_1
     #  easy.version = Curl::HTTP_1_0
     #  easy.version = Curl::HTTP_NONE

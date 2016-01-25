@@ -4,6 +4,12 @@ class FooNoToS
 end
 
 class TestCurbCurlEasy < Test::Unit::TestCase
+  def test_global_reset
+    c = Curl.get($TEST_URL)
+    # in a Timeout block you should reset the thread current handle 
+    Curl.reset
+  end
+
   def test_threads
     t = []
     5.times do
@@ -335,7 +341,19 @@ class TestCurbCurlEasy < Test::Unit::TestCase
     c.timeout = nil
     assert_nil c.timeout
   end
-  
+
+  def test_timeout_ms_01
+    c = Curl::Easy.new($TEST_URL)
+
+    assert_nil c.timeout_ms
+
+    c.timeout_ms = 100
+    assert_equal 100, c.timeout_ms
+
+    c.timeout_ms = nil
+    assert_nil c.timeout_ms
+  end
+
   def test_connect_timeout_01
     c = Curl::Easy.new($TEST_URL)
     
@@ -347,7 +365,19 @@ class TestCurbCurlEasy < Test::Unit::TestCase
     c.connect_timeout = nil
     assert_nil c.connect_timeout
   end
-  
+
+  def test_connect_timeout_ms_01
+    c = Curl::Easy.new($TEST_URL)
+
+    assert_nil c.connect_timeout_ms
+
+    c.connect_timeout_ms = 100
+    assert_equal 100, c.connect_timeout_ms
+
+    c.connect_timeout_ms = nil
+    assert_nil c.connect_timeout_ms
+  end
+
   def test_ftp_response_timeout_01
     c = Curl::Easy.new($TEST_URL)
     
